@@ -1,0 +1,11 @@
+{
+  "MaxAllowedPlugins": 32,
+  "MaxAllowedConnection": 128,
+  "NotifyKeepAliveInterval": 30, // seconds
+  "BindAddress": "0.0.0.0",
+  "BindPort": 65500,
+  "ClientReceiveTimeout": 120, // seconds
+  "ClientSendTimeout": 120, // seconds
+  "PluginBusMinSleep": 100, // milliseconds
+  "PluginMaxEventResultsFramed":  4096 // careful, setting this too high having set the max allowed plugins to a high amount can cause memory issues
+}
