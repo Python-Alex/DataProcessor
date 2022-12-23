@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Net;
 using System.Linq;
 using System.Text;
-using System.Net;
+using System.Timers;
 using System.Threading;
 using System.Net.Sockets;
 using System.Collections.Generic;
-using System.Timers;
 
 using Newtonsoft.Json;
 
@@ -74,17 +74,27 @@ namespace DataProcessor.Essentials.Network.Entities
             NotifiedInterval = false;
         }
 
-        public void HandleData(Data.Description descriptor, string raw_data)
+        public void HandleData(Data.Receiving.Description descriptor, string raw_data)
         {
-            if ((Data.EventType)descriptor.Event == Data.EventType.INITIALIZE)
+            if ((Data.Receiving.EventType)descriptor.Event == Data.Receiving.EventType.INITIALIZE)
             {
-                Data.InitializeTask initializeTask = JsonConvert.DeserializeObject<Data.InitializeTask>(raw_data);
+                Data.Receiving.InitializeTask initializeTask = JsonConvert.DeserializeObject<Data.Receiving.InitializeTask>(raw_data);
                 try
                 {
                     EventHandler.Tasks.DataTask dataTask = new EventHandler.Tasks.DataTask(initializeTask.Tag, initializeTask.ModuleName);
                     EventHandler.Tasks.TaskRegistry.Tasks.Add(dataTask);
 
+                    dataTask.Running = true;
+                    dataTask.StopTask = false;
+                    dataTask.PauseTask = false;
+
                     Logging.Logging.Info("ConnectionThread", String.Format($"Initialized Task ~Tag: {dataTask.Tag}, ~ModuleName: {dataTask.ModuleName}"));
+
+                    Data.Sending.Outgoing initialized = new Data.Sending.Outgoing();
+                    initialized.Event = (int)Data.Sending.EventType.INITIALIZED;
+                    initialized.Tag = initializeTask.Tag;
+
+                    Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(initialized)));
                 }
                 catch (Exception ex)
                 {
@@ -92,17 +102,29 @@ namespace DataProcessor.Essentials.Network.Entities
                     Error = ex;
                 }
             }
-            else if ((Data.EventType)descriptor.Event == Data.EventType.FEED)
+            else if ((Data.Receiving.EventType)descriptor.Event == Data.Receiving.EventType.FEED)
             {
-                Data.FeedTask feedTask = JsonConvert.DeserializeObject<Data.FeedTask>(raw_data);
+                Data.Receiving.FeedTask feedTask = JsonConvert.DeserializeObject<Data.Receiving.FeedTask>(raw_data);
                 EventHandler.Tasks.DataTask dataTask = EventHandler.Tasks.TaskRegistry.GetTask(feedTask.Tag);
 
+                Thread subTaskThread = new Thread(() => dataTask.Execute(feedTask));
+                // feed thread into event loop
+                subTaskThread.Start();
+
+                dataTask.CurrentThreads.Add(subTaskThread);
+
                 Logging.Logging.Info("ConnectionThread", String.Format($"Feeding Task ~Tag: {dataTask.Tag}"));
-                
+
+                Data.Sending.Outgoing fed = new Data.Sending.Outgoing();
+                fed.Event = (int)Data.Sending.EventType.DATA_FED;
+                fed.Tag = dataTask.Tag;
+
+                Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(fed)));
+
             }
-            else if ((Data.EventType)descriptor.Event == Data.EventType.UPDATE)
+            else if ((Data.Receiving.EventType)descriptor.Event == Data.Receiving.EventType.UPDATE)
             {
-                Data.UpdateTask updateTask = JsonConvert.DeserializeObject<Data.UpdateTask>(raw_data);
+                Data.Receiving.UpdateTask updateTask = JsonConvert.DeserializeObject<Data.Receiving.UpdateTask>(raw_data);
                 EventHandler.Tasks.DataTask dataTask = EventHandler.Tasks.TaskRegistry.GetTask(updateTask.Tag);
 
                 if (updateTask.PauseTask)
@@ -122,9 +144,34 @@ namespace DataProcessor.Essentials.Network.Entities
                 }
 
                 Logging.Logging.Info("ConnectionThread", String.Format($"Updated Task ~Tag: {dataTask.Tag} Runtime Paused:{dataTask.PauseTask} Stopped:{dataTask.StopTask} Running:{dataTask.Running}"));
-            }
 
-            Logging.Logging.Info("ConnectionThread", String.Format($"Shipped Event {(Data.EventType)descriptor.Event}"));
+                Data.Sending.Outgoing updated = new Data.Sending.Outgoing();
+                updated.Event = (int)Data.Sending.EventType.DATA_FED;
+                updated.Tag = dataTask.Tag;
+
+                Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(updated)));
+            }
+            else if((Data.Receiving.EventType)descriptor.Event == Data.Receiving.EventType.QUERY)
+            {
+                Data.Receiving.QueryEntry queryEntry = JsonConvert.DeserializeObject<Data.Receiving.QueryEntry>(raw_data);
+                if(!EventHandler.Table.EventTableExtensions.QueryTable.ContainsKey(queryEntry.Var))
+                {
+                    Logging.Logging.Info("ConnectionThread", String.Format($"Query Method Doesn't Exist {queryEntry.Var}"));
+                    return;
+                }
+
+                Func<string, List<dynamic>> queryFunction = EventHandler.Table.EventTableExtensions.QueryTable[queryEntry.Var];
+                List<dynamic> response = queryFunction(queryEntry.Tag);
+
+                Data.Sending.QueryResponse qresponse = new Data.Sending.QueryResponse();
+                qresponse.Event = (int)Data.Sending.EventType.QUERY_RESPONSE;
+                qresponse.Tag = queryEntry.Tag;
+                qresponse.Response = response;
+
+                Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(qresponse)));
+
+            }
+            Logging.Logging.Info("ConnectionThread", String.Format($"Shipped Event {(Data.Receiving.EventType)descriptor.Event}"));
         }
 
         public override void RunThread()
@@ -145,7 +192,7 @@ namespace DataProcessor.Essentials.Network.Entities
                         continue;
                     }
 
-                    Data.Description descriptor = JsonConvert.DeserializeObject<Data.Description>(data);
+                    Data.Receiving.Description descriptor = JsonConvert.DeserializeObject<Data.Receiving.Description>(data);
                     Logging.Logging.Info("ConnectionThread", String.Format($"Handling Event: {descriptor.Event} - Descriptor Tag: {descriptor.Tag}"));
                     HandleData(descriptor, data);
                 
@@ -190,6 +237,7 @@ namespace DataProcessor.Essentials.Network.Entities
                 Logging.Logging.Error("NetworkInit", "Failed Setting up Handler", ex);
                 return;
             }
+
         }
 
         public override void RunThread()

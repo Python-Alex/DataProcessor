@@ -6,13 +6,14 @@ using System.Threading;
 using System.Collections.Generic;
 
 
-namespace DataProcessor.Essentials.Network.Data
+namespace DataProcessor.Essentials.Network.Data.Receiving
 {
     public enum EventType
     {
         INITIALIZE = 0,
         FEED = 1,
-        UPDATE = 2
+        UPDATE = 2,
+        QUERY = 3
     }
 
 
@@ -35,8 +36,9 @@ namespace DataProcessor.Essentials.Network.Data
     {
         public int Event;
         public string Tag;
-        public List<string> Instructions; // API Callback List
-        public List<dynamic> Stack;       // Value Stack for Callbacks
+        public Dictionary<string, dynamic> Arguments;
+        //public List<string> Instructions; // API Callback List
+        //public List<dynamic> Stack;       // Value Stack for Callbacks
                                           // Instructions[0] && Stack[0]
     }
 
@@ -50,5 +52,12 @@ namespace DataProcessor.Essentials.Network.Data
         public bool StopTask;
         public bool PauseTask;
         public bool ResumeTask;
+    }
+
+    public class QueryEntry
+    {
+        public int Event;
+        public string Tag;
+        public string Var;
     }
 }
