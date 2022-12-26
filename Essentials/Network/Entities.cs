@@ -100,6 +100,8 @@ namespace DataProcessor.Essentials.Network.Entities
                 {
                     Logging.Logging.Error("ConnectionThread", String.Format($"Failed Initializing Task"), ex);
                     Error = ex;
+
+                    return;
                 }
             }
             else if ((Data.Receiving.EventType)descriptor.Event == Data.Receiving.EventType.FEED)
@@ -146,7 +148,7 @@ namespace DataProcessor.Essentials.Network.Entities
                 Logging.Logging.Info("ConnectionThread", String.Format($"Updated Task ~Tag: {dataTask.Tag} Runtime Paused:{dataTask.PauseTask} Stopped:{dataTask.StopTask} Running:{dataTask.Running}"));
 
                 Data.Sending.Outgoing updated = new Data.Sending.Outgoing();
-                updated.Event = (int)Data.Sending.EventType.DATA_FED;
+                updated.Event = (int)Data.Sending.EventType.UPDATED;
                 updated.Tag = dataTask.Tag;
 
                 Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(updated)));
@@ -169,7 +171,6 @@ namespace DataProcessor.Essentials.Network.Entities
                 qresponse.Response = response;
 
                 Connection.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(qresponse)));
-
             }
             Logging.Logging.Info("ConnectionThread", String.Format($"Shipped Event {(Data.Receiving.EventType)descriptor.Event}"));
         }
@@ -191,7 +192,7 @@ namespace DataProcessor.Essentials.Network.Entities
                     {
                         continue;
                     }
-
+                    Console.WriteLine(data);
                     Data.Receiving.Description descriptor = JsonConvert.DeserializeObject<Data.Receiving.Description>(data);
                     Logging.Logging.Info("ConnectionThread", String.Format($"Handling Event: {descriptor.Event} - Descriptor Tag: {descriptor.Tag}"));
                     HandleData(descriptor, data);
@@ -211,7 +212,7 @@ namespace DataProcessor.Essentials.Network.Entities
             catch (Exception ex)
             {
                 Logging.Logging.Error("ConnectionThread", String.Format($"Connection[{Connection.Handle}] Experienced an Error"), ex);
-                Errored = true;
+                
             }
             
         }

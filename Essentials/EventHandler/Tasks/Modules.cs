@@ -144,10 +144,15 @@ namespace DataProcessor.Essentials.EventHandler.Tasks
         public static Dictionary<string, Func<DataTask, Network.Data.Receiving.FeedTask, int>> Lookup = new Dictionary<string, Func<DataTask, Network.Data.Receiving.FeedTask, int>>()
         {
             {"ImageRatioCompare",  ImageRatioCompare },
-            {"MultiImageRatioCompare", MultiImageRatioCompare }
 
         };
 
+        /// <summary>
+        /// Internal Function for Module, Returns a New Resized Nested List
+        /// </summary>
+        /// <param name="area"></param>
+        /// <param name="matching"></param>
+        /// <returns></returns>
         static internal List<List<int>> Resize3DArray(List<List<int>> area, List<List<int>> matching)
         {
             List<List<int>> varea = new List<List<int>>();
@@ -159,6 +164,11 @@ namespace DataProcessor.Essentials.EventHandler.Tasks
             return varea;
         }
 
+        /// <summary>
+        /// Internal Function for Modules, Returns Smallest Nested List, If Multiple of the Same Smallest Size, Last is Returned
+        /// </summary>
+        /// <param name="areas"></param>
+        /// <returns></returns>
         static internal List<List<int>> Smallest3DArray(List<List<List<int>>> areas)
         {
             List<List<int>> smallest = null;
@@ -234,57 +244,5 @@ namespace DataProcessor.Essentials.EventHandler.Tasks
             return 0;
         }
 
-        /// <summary>
-        /// Matches All Given Images Against Each Element
-        /// </summary>
-        /// <param name="dataTask"></param>
-        /// <param name="feedTask"></param>
-        /// <returns></returns>
-        public static int MultiImageRatioCompare(DataTask dataTask, Network.Data.Receiving.FeedTask feedTask)
-        {
-            Thread current = Thread.CurrentThread;
-            if (!dataTask.CurrentThreads.Contains(current))
-            {
-                Logging.Logging.Info("ModuleOutput.ImageRatioCompare", "Thread does not belong to passed DataTask");
-            }
-
-            List<List<List<int>>> Images = feedTask.Arguments["Images"].ToObject<List<List<List<int>>>>();
-
-            List<List<int>> Smallest = Smallest3DArray(Images);
-            foreach(List<List<int>> image in Images)
-            {
-                if(image.Count > Smallest.Count || image[0].Count > Smallest[0].Count)
-                    Resize3DArray(image, Smallest);
-            }
-
-            List<float> Results = new List<float>();
-
-            int Size = Smallest.Count * Smallest[0].Count;
-
-            for (int i = 0; i < Images.Count; i++)
-            {
-                
-                foreach (List<List<int>> image in Images)
-                {
-                    float ImageResult = 0f;
-                    float Matched = 0f;
-
-                    for (int y = 0; y < image.Count; y++)
-                    {
-                        for (int x = 0; x < image[0].Count; x++)
-                        {
-                            if (image[y][x] == image[y][x])
-                            {
-                                Matched++;            
-                            }
-                        }
-                    }
-                    ImageResult = (Matched / Size) * 100f;
-                    Results.Add(ImageResult);
-                }
-
-            }
-            return 0;
-        }
     }
 }
