@@ -16,7 +16,7 @@ Highly configurable for almost any means, Almost entirely package free
 | `json structure` | Json/Dictionary Based Data Transmission | [Newtonsoft(13.0.2~nuget)](https://www.nuget.org/packages/Newtonsoft.Json/) |
 
 ---
-# [Python Client Implementation](www.google.com)
+# [Python Client Implementation](https://github.com/Python-Alex/DataProcessor/tree/master/Testing/DPClient)
 ---
 # Create Plugin
 - Navigate to Examples.PluginExample.cs, and Copy the File
