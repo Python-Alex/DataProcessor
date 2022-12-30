@@ -17,4 +17,9 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Testing\Game\Entities\Data\" />
+    <Folder Include="Testing\Game\Render\Assets\BaseCharacterModel\" />
+  </ItemGroup>
+
 </Project>

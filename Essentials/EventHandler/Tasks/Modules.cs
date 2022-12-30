@@ -237,10 +237,7 @@ namespace DataProcessor.Essentials.EventHandler.Tasks
             Logging.Logging.Info("ModuleOutput.ImageRatioCompare", String.Format($"Compared Results -> {ComparisonRate}%"));
 
             dataTask.CurrentThreads.Remove(current);
-
             dataTask.Results.Add(ComparisonRate);
-
-            // push out var to result stack
             return 0;
         }
 

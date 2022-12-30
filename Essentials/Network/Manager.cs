@@ -14,6 +14,7 @@ namespace DataProcessor.Essentials.Network
         public static bool LockAccess = false;
         public static bool InsertInstance(ConnectionThread instance)
         {
+
             if (GetInstance(obj => obj.GetConnection() == instance.GetConnection()) != null)
             {
                 return false;

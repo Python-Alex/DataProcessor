@@ -1,0 +1,13 @@
+--- Makefile-nolib
++++ Makefile-nolib
+@@ -48,10 +48,7 @@ EXES = $(PNGCRUSH)$(E)
+ all:  $(EXES)
+ 
+ pngcrush$(O): pngcrush.c cexcept.h
+-       touch png.h
+-       mv png.h png.h_embedded
+        $(CC) -c $(CPPFLAGS) $(CFLAGS) $<
+-       mv png.h_embedded png.h
+ 
+ $(PNGCRUSH)$(E): $(OBJS)
+        $(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)

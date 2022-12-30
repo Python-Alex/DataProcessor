@@ -17,6 +17,8 @@ Highly configurable for almost any means, Almost entirely package free
 
 ---
 # [Python Client Implementation](www.google.com)
+## NOTE: Send speeds are (socket_send_time + 0.0025) * 60/per second
+##	C# Receives Stack data for some weird reason
 ---
 # Create Plugin
 - Navigate to Examples.PluginExample.cs, and Copy the File

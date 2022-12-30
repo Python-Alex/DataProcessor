@@ -186,13 +186,13 @@ namespace DataProcessor.Essentials.Network.Entities
 
                     BytesReceived += Connection.Receive(bytes);
                     data = Encoding.ASCII.GetString(bytes);
+                    Console.WriteLine(data);
 
                     data = data.Replace('\r', '\0').Replace('\n', '\0');
                     if(data.Length == 2 || data.Length == 0)
                     {
                         continue;
                     }
-                    Console.WriteLine(data);
                     Data.Receiving.Description descriptor = JsonConvert.DeserializeObject<Data.Receiving.Description>(data);
                     Logging.Logging.Info("ConnectionThread", String.Format($"Handling Event: {descriptor.Event} - Descriptor Tag: {descriptor.Tag}"));
                     HandleData(descriptor, data);
@@ -222,6 +222,9 @@ namespace DataProcessor.Essentials.Network.Entities
     {
         Socket Handler;
         public IPEndPoint EndPoint;
+
+        public static List<ConnectionThread> Connections = new List<ConnectionThread>();
+
         public ListenHandler()
             : base()
         {
@@ -247,6 +250,8 @@ namespace DataProcessor.Essentials.Network.Entities
             {
                 ConnectionThread connectionThread = new ConnectionThread(Handler.Accept());
                 connectionThread.Start();
+
+                Connections.Add(connectionThread);
             }
         }
     }
